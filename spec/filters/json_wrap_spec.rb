@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 require "logstash/filters/json_wrap"
 
 describe LogStash::Filters::JsonWrap do
-  describe "Ensure " do
+  describe "Ensure correct behavior" do
     let(:config) do <<-CONFIG
       filter {
         json_wrap {
@@ -27,8 +27,8 @@ describe LogStash::Filters::JsonWrap do
 
     sample(hash1) do
       expect(subject).to include("success")
-      expect(subject).not_to include("app")
       expect(subject).not_to include("tags")
+      expect(subject).not_to include("app")
       expect(subject).to include("dst")
       h = LogStash::Json.load(subject.get('dst'))
       expect(h).to eq(hash1)
@@ -36,12 +36,47 @@ describe LogStash::Filters::JsonWrap do
 
     sample(hash2) do
       expect(subject).to include("success")
-      expect(subject).not_to include("app")
       expect(subject).not_to include("tags")
+      expect(subject).not_to include("app")
       expect(subject).to include("dst")
       h = LogStash::Json.load(subject.get('dst'))
       expect(h).to eq(hash1)
     end
+  end
 
+  describe "Correctly handle excluded nested fields" do
+    let(:config) do <<-CONFIG
+      filter {
+        json_wrap {
+          exclude => ["@timestamp", "@metadata", "@version", "[nested][field]"]
+          target => "dst"
+          add_field => { "success" => "success" }
+        }
+      }
+    CONFIG
+    end
+
+    hOrig = {
+      "nested" => {
+        "field" => "test"
+      },
+      "some" => "other"
+    }
+    hWrapped = {
+      "nested" => {},
+      "some" => "other"
+    }
+    sample(hOrig) do
+      puts
+      expect(subject).to include("success")
+      expect(subject).not_to include("tags")
+      expect(subject).not_to include("some")
+      expect(subject).to include("dst")
+      expect(subject.get("[nested][field]")).to eq("test")
+      wrapped = subject.get('dst')
+      h = LogStash::Json.load(wrapped)
+      expect(h["nested"]["field"]).to eq(nil)
+      expect(h).to eq(hWrapped)
+    end
   end
 end

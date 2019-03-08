@@ -20,20 +20,30 @@ class LogStash::Filters::JsonWrap < LogStash::Filters::Base
 
   public
   def filter(event)
-    s = event.clone()
-    n = LogStash::Event.new({})
+    begin
+      s = event.clone()
+      n = LogStash::Event.new({})
 
-    @exclude.each do |e|
-      v = s.remove(e)
-      @logger.warn("Handling", :field => e, :value => v)
-      n.set(e, v) if nil != v
+      @exclude.each do |e|
+        v = s.remove(e)
+        n.set(e, v) if nil != v
+      end
+
+      n.set(@target, s.to_json())
+
+      filter_matched(n)
+    rescue Exception => e
+      @logger.warn("an error occurred", :exception => e)
+      @tags_on_failure.each { |t| event.tag(t) }
+      return
     end
-
-    n.set(@target, s.to_json())
-
-    filter_matched(n)
     yield n
 
     event.cancel
+
+  rescue Exception => e
+    @logger.warn("an error occurred", :exception => e)
+    @tags_on_failure.each { |t| n.tag(t) }
+    @tags_on_failure.each { |t| event.tag(t) }
   end # def filter
 end # class LogStash::Filters::JsonWrap
