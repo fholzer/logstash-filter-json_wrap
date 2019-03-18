@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'logstash-filter-json_wrap'
-  s.version       = '0.1.0'
+  s.version       = '0.1.1'
   s.licenses      = ['Apache-2.0']
   s.summary       = 'Serialize Logstash events to JSON and store them in your event'
   s.description   = 'See https://github.com/fholzer/logstash-filter-wrap_json/blob/master/README.md for details.'

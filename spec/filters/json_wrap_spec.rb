@@ -56,18 +56,19 @@ describe LogStash::Filters::JsonWrap do
     CONFIG
     end
 
+    hMeta = { "very" => "meta" }
     hOrig = {
       "nested" => {
         "field" => "test"
       },
-      "some" => "other"
+      "some" => "other",
+      "@metadata" => hMeta
     }
     hWrapped = {
       "nested" => {},
       "some" => "other"
     }
     sample(hOrig) do
-      puts
       expect(subject).to include("success")
       expect(subject).not_to include("tags")
       expect(subject).not_to include("some")
@@ -77,6 +78,7 @@ describe LogStash::Filters::JsonWrap do
       h = LogStash::Json.load(wrapped)
       expect(h["nested"]["field"]).to eq(nil)
       expect(h).to eq(hWrapped)
+      expect(subject.get("@metadata")).to  eq(hMeta)
     end
   end
 end

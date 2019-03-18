@@ -25,7 +25,10 @@ class LogStash::Filters::JsonWrap < LogStash::Filters::Base
       n = LogStash::Event.new({})
 
       @exclude.each do |e|
-        v = s.remove(e)
+        # need to to get and remove in two steps because "@metadata" can't be
+        # removed, so the call s.remove("@metadata") returns nil
+        v = s.get(e)
+        s.remove(e)
         n.set(e, v) if nil != v
       end
 
